@@ -504,3 +504,23 @@ class API:
             async for rep in gen:
                 for x in parse_tweets(rep.json(), limit):
                     yield x
+
+    async def user_by_screen_name_raw(self, screen_name: str):
+        op = OP_UserByScreenName
+        kv = {"screen_name": screen_name, "withSafetyModeUserFields": False}
+        ft = {
+            "highlights_tweets_tab_ui_enabled": True,
+            "hidden_profile_likes_enabled": True,
+            "creator_subscriptions_tweet_preview_api_enabled": True,
+            "hidden_profile_subscriptions_enabled": True,
+            "subscriptions_verification_info_verified_since_enabled": True,
+            "subscriptions_verification_info_is_identity_verified_enabled": False,
+            "responsive_web_twitter_article_notes_tab_enabled": False,
+            "subscriptions_feature_can_gift_premium": False,
+            "profile_label_improvements_pcf_label_in_post_enabled": False,
+        }
+        return await self._gql_item(op, kv, ft)
+
+    async def user_by_screen_name(self, screen_name: str):
+        rep = await self.user_by_screen_name_raw(screen_name)
+        return parse_user(rep)
