@@ -57,6 +57,10 @@ async def migrate(db: aiosqlite.Connection):
         rs = await cur.fetchone()
         uv = rs[0] if rs else 0
 
+    async def wal_mode():
+        await db.execute("PRAGMA journal_mode=WAL")
+        await db.execute("PRAGMA synchronous=NORMAL")
+
     async def v1():
         qs = """
         CREATE TABLE IF NOT EXISTS accounts (
@@ -84,12 +88,16 @@ async def migrate(db: aiosqlite.Connection):
     async def v4():
         await db.execute("ALTER TABLE accounts ADD COLUMN mfa_code TEXT DEFAULT NULL")
 
+
     migrations = {
         1: v1,
         2: v2,
         3: v3,
         4: v4,
     }
+
+    await wal_mode()
+    await db.commit()
 
     # logger.debug(f"Current migration v{uv} (latest v{len(migrations)})")
     for i in range(uv + 1, len(migrations) + 1):
