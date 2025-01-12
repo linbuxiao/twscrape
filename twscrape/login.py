@@ -18,6 +18,7 @@ LOGIN_URL = "https://api.x.com/1.1/onboarding/task.json"
 class LoginConfig:
     email_first: bool = False
     manual: bool = False
+    tid: str = None
 
 
 @dataclass
@@ -261,6 +262,8 @@ async def login(acc: Account, cfg: LoginConfig | None = None) -> Account:
     async with acc.make_client() as client:
         guest_token = await get_guest_token(client)
         client.headers["x-guest-token"] = guest_token
+        if cfg.tid:
+            client.headers["x-client-transaction-id"] = cfg.tid
 
         rep = await login_initiate(client)
         ctx = TaskCtx(client, acc, cfg, None, imap)
