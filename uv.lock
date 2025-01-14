@@ -433,6 +433,11 @@ dev = [
     { name = "ruff" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "aiosqlite", specifier = ">=0.17.0" },
@@ -448,6 +453,9 @@ requires-dist = [
     { name = "pytest-httpx", marker = "extra == 'dev'", specifier = ">=0.28.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.11" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "ruff", specifier = ">=0.9.1" }]
 
 [[package]]
 name = "typing-extensions"

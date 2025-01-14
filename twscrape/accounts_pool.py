@@ -81,6 +81,7 @@ class AccountsPool:
         proxy: str | None = None,
         cookies: str | None = None,
         mfa_code: str | None = None,
+        auth_token: str | None = None,
     ):
         qs = "SELECT * FROM accounts WHERE username = :username"
         rs = await fetchone(self._db_file, qs, {"username": username})
@@ -101,6 +102,7 @@ class AccountsPool:
             cookies=parse_cookies(cookies) if cookies else {},
             proxy=proxy,
             mfa_code=mfa_code,
+            auth_token=auth_token,
         )
 
         if "ct0" in account.cookies:
@@ -116,7 +118,7 @@ class AccountsPool:
             logger.warning("No usernames provided")
             return
 
-        qs = f"""DELETE FROM accounts WHERE username IN ({','.join([f'"{x}"' for x in usernames])})"""
+        qs = f"""DELETE FROM accounts WHERE username IN ({",".join([f'"{x}"' for x in usernames])})"""
         await execute(self._db_file, qs)
 
     async def delete_inactive(self):
@@ -201,7 +203,7 @@ class AccountsPool:
             headers = json_object(),
             cookies = json_object(),
             user_agent = "{UserAgent().safari}"
-        WHERE username IN ({','.join([f'"{x}"' for x in usernames])})
+        WHERE username IN ({",".join([f'"{x}"' for x in usernames])})
         """
 
         await execute(self._db_file, qs)

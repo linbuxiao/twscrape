@@ -64,3 +64,8 @@ line-length = 99
 
 [tool.ruff.lint]
 ignore = ["E501"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.9.1",
+]

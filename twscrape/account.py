@@ -25,6 +25,7 @@ class Account(JSONTrait):
     headers: dict[str, str] = field(default_factory=dict)
     cookies: dict[str, str] = field(default_factory=dict)
     mfa_code: str | None = None
+    auth_token: str | None = None
     proxy: str | None = None
     error_msg: str | None = None
     last_used: datetime | None = None

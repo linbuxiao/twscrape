@@ -18,7 +18,7 @@ LOGIN_URL = "https://api.x.com/1.1/onboarding/task.json"
 class LoginConfig:
     email_first: bool = False
     manual: bool = False
-    tid: str = None
+    tid: str | None = None
 
 
 @dataclass
@@ -249,30 +249,46 @@ async def next_login_task(ctx: TaskCtx, rep: Response):
     return None
 
 
+async def login_by_auth_token(
+    client: AsyncClient, acc: Account, cfg: LoginConfig | None
+) -> str | None:
+    URL = "https://business.x.com/en"
+    client.cookies.update({"auth_token": acc.auth_token})
+    res = await client.get(URL)
+    res.raise_for_status()
+    logger.info(f"cookies {res.cookies}")
+    ct0 = res.cookies.get("ct0")
+    logger.info(f"auth token login result {ct0}")
+    return ct0
+
+
 async def login(acc: Account, cfg: LoginConfig | None = None) -> Account:
     log_id = f"{acc.username} - {acc.email}"
     if acc.active:
         logger.info(f"account already active {log_id}")
         return acc
 
-    cfg, imap = cfg or LoginConfig(), None
-    if cfg.email_first and not cfg.manual:
-        imap = await imap_login(acc.email, acc.email_password)
-
     async with acc.make_client() as client:
         guest_token = await get_guest_token(client)
         client.headers["x-guest-token"] = guest_token
         if cfg.tid:
             client.headers["x-client-transaction-id"] = cfg.tid
-
-        rep = await login_initiate(client)
-        ctx = TaskCtx(client, acc, cfg, None, imap)
-        while True:
-            rep = await next_login_task(ctx, rep)
-            if not rep:
-                break
-
-        assert "ct0" in client.cookies, "ct0 not in cookies (most likely ip ban)"
+        ct0 = None
+        if acc.auth_token:
+            ct0 = await login_by_auth_token(client, acc, cfg)
+        if not ct0:
+            cfg, imap = cfg or LoginConfig(), None
+            if cfg.email_first and not cfg.manual:
+                imap = await imap_login(acc.email, acc.email_password)
+            rep = await login_initiate(client)
+            ctx = TaskCtx(client, acc, cfg, None, imap)
+            while True:
+                rep = await next_login_task(ctx, rep)
+                if not rep:
+                    break
+                assert "ct0" in client.cookies, "ct0 not in cookies (most likely ip ban)"
+                ct0 = client.cookies["ct0"]
+                acc.auth_token = client.cookies["auth_token"]
         client.headers["x-csrf-token"] = client.cookies["ct0"]
         client.headers["x-twitter-auth-type"] = "OAuth2Session"
 
